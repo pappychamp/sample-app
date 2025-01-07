@@ -18,3 +18,29 @@ jobs:
       with:
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/sample-app:${{ github.sha }}
+    # 対象リポジトリをチェックアウト
+    - name: Checkout target repository
+      uses: actions/checkout@v3
+      with:
+        repository: pappychamp/sample-helm-chart
+        ref: main # 対象のブランチ
+        token: ${{ secrets.PAT }}
+
+    # ファイルを変更する（例: echoで変更）
+    - name: Update image tag in values.yaml using yq
+      run: |
+        yq e ".image.tag = \"${{ github.sha }}\"" -i ./sample-app/values.yaml
+        cat ./sample-app/values.yaml
+
+    # 変更をコミット
+    - name: Commit changes
+      run: |
+        git config --global user.name github-actions[bot]
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add .
+        git commit -m "Update image tag"
+
+    # プッシュ
+    - name: Push changes
+      run: |
+        git push
